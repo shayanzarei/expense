@@ -1,11 +1,13 @@
 import { useFinance } from '../context/MonthlyFinanceContext'
 import { formatEur } from '../lib/math-engine'
+import type { GroceryWeekSummary } from '../types'
 import {
   KHORDO_KHORAK_LONA_MONTHLY,
   KHORDO_KHORAK_MONTHLY_TARGET,
   KHORDO_KHORAK_MONTHLY_TOTAL,
   KHORDO_KHORAK_WEEKLY_TARGET,
 } from '../types'
+import { BlurSaveNumberInput, BlurSaveTextInput } from './BlurSaveInput'
 
 function progressColor(used: number, target: number): string {
   if (used <= 0) return 'bg-gray-200'
@@ -13,6 +15,70 @@ function progressColor(used: number, target: number): string {
   if (ratio > 1) return 'bg-red-500'
   if (ratio >= 0.85) return 'bg-amber-400'
   return 'bg-green-500'
+}
+
+function GroceryWeekRow({
+  week,
+  onSaveAmount,
+  onSaveNotes,
+}: {
+  week: GroceryWeekSummary
+  onSaveAmount: (amount: number) => void
+  onSaveNotes: (notes: string) => void
+}) {
+  const pct = Math.min((week.amountUsed / week.target) * 100, 100)
+  const over = week.amountUsed > week.target
+
+  return (
+    <li className="rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-sm">
+      <div className="mb-1 flex items-baseline justify-between">
+        <span className="text-sm font-semibold">Week {week.weekNumber}</span>
+        <span className="text-xs text-[var(--color-muted)]">Target: {week.target}€</span>
+      </div>
+
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-1">
+        <span className="text-sm text-[var(--color-ink)]">
+          {week.amountUsed > 0 ? `${formatEur(week.amountUsed)} used` : '—'}
+        </span>
+        <span
+          className={`text-xs font-semibold ${
+            week.delta >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
+          {week.amountUsed > 0
+            ? week.delta >= 0
+              ? `${formatEur(week.delta)} left`
+              : `${formatEur(-week.delta)} over`
+            : `${week.target}€ budget`}
+        </span>
+      </div>
+
+      <div className="mb-2 h-2 overflow-hidden rounded-full bg-gray-100">
+        <div
+          className={`h-full rounded-full transition-all ${progressColor(week.amountUsed, week.target)}`}
+          style={{ width: over ? '100%' : `${pct}%` }}
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-[var(--color-muted)]">€</span>
+        <BlurSaveNumberInput
+          saved={week.amountUsed}
+          syncKey={week.weekNumber}
+          placeholder="Amount used"
+          className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums"
+          onSave={onSaveAmount}
+        />
+      </div>
+      <BlurSaveTextInput
+        saved={week.notes ?? ''}
+        syncKey={week.weekNumber}
+        placeholder="Notes"
+        className="mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs"
+        onSave={onSaveNotes}
+      />
+    </li>
+  )
 }
 
 export function WeeklyTracker() {
@@ -39,77 +105,18 @@ export function WeeklyTracker() {
       </p>
 
       <ul className="space-y-3">
-        {groceryWeeks.map((week) => {
-          const pct = Math.min((week.amountUsed / week.target) * 100, 100)
-          const over = week.amountUsed > week.target
-
-          return (
-            <li
-              key={week.weekNumber}
-              className="rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-sm"
-            >
-              <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-sm font-semibold">Week {week.weekNumber}</span>
-                <span className="text-xs text-[var(--color-muted)]">
-                  Target: {week.target}€
-                </span>
-              </div>
-
-              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-1">
-                <span className="text-sm text-[var(--color-ink)]">
-                  {week.amountUsed > 0
-                    ? `${formatEur(week.amountUsed)} used`
-                    : '—'}
-                </span>
-                <span
-                  className={`text-xs font-semibold ${
-                    week.delta >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {week.amountUsed > 0
-                    ? week.delta >= 0
-                      ? `${formatEur(week.delta)} left`
-                      : `${formatEur(-week.delta)} over`
-                    : `${week.target}€ budget`}
-                </span>
-              </div>
-
-              <div className="mb-2 h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className={`h-full rounded-full transition-all ${progressColor(week.amountUsed, week.target)}`}
-                  style={{ width: over ? '100%' : `${pct}%` }}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-[var(--color-muted)]">€</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="Amount used"
-                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums"
-                  defaultValue={week.amountUsed || ''}
-                  key={`${week.weekNumber}-${week.amountUsed}`}
-                  onBlur={(e) => {
-                    const v = parseFloat(e.target.value)
-                    if (!Number.isNaN(v)) {
-                      void upsertGroceryWeek(week.weekNumber, { amount_used: v })
-                    }
-                  }}
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Notes"
-                className="mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs"
-                defaultValue={week.notes ?? ''}
-                onBlur={(e) =>
-                  void upsertGroceryWeek(week.weekNumber, { notes: e.target.value })
-                }
-              />
-            </li>
-          )
-        })}
+        {groceryWeeks.map((week) => (
+          <GroceryWeekRow
+            key={week.weekNumber}
+            week={week}
+            onSaveAmount={(amount_used) =>
+              void upsertGroceryWeek(week.weekNumber, { amount_used })
+            }
+            onSaveNotes={(notes) =>
+              void upsertGroceryWeek(week.weekNumber, { notes })
+            }
+          />
+        ))}
       </ul>
 
       <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-sm">
@@ -145,17 +152,12 @@ export function WeeklyTracker() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-[var(--color-muted)]">€</span>
-          <input
-            type="number"
-            inputMode="decimal"
+          <BlurSaveNumberInput
+            saved={lonaUsed}
+            syncKey="lona"
             placeholder="Lona spent this month"
             className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums"
-            defaultValue={lonaUsed || ''}
-            key={`lona-${lonaUsed}`}
-            onBlur={(e) => {
-              const v = parseFloat(e.target.value)
-              if (!Number.isNaN(v)) void updateLonaUsed(v)
-            }}
+            onSave={(v) => void updateLonaUsed(v)}
           />
         </div>
       </div>

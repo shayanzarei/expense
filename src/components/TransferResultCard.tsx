@@ -33,12 +33,6 @@ export function TransferResultCard() {
     }
   })
 
-  const copyAll = async () => {
-    await navigator.clipboard.writeText(lines.map((l) => l.text).join('\n'))
-    setCopied('all')
-    setTimeout(() => setCopied(null), 2000)
-  }
-
   const copyOne = async (person: PersonName, text: string) => {
     await navigator.clipboard.writeText(text)
     setCopied(person)
@@ -52,13 +46,6 @@ export function TransferResultCard() {
           <h2 className="text-[11px] font-bold uppercase tracking-wider text-white">
             Final Transfer to ABN AMRO
           </h2>
-          <button
-            type="button"
-            onClick={() => void copyAll()}
-            className="text-[10px] font-semibold text-white/70 underline"
-          >
-            {copied === 'all' ? 'Copied' : 'Copy'}
-          </button>
         </div>
 
         <div className="space-y-3 p-4">

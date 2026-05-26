@@ -63,7 +63,7 @@ export function KhorojiItemRow({ item }: Props) {
         <input
           type="number"
           inputMode="decimal"
-          className="w-16 rounded-md border border-[var(--color-border)] bg-white px-1.5 py-1 text-right text-sm font-medium tabular-nums"
+          className="w-[5.25rem] min-w-[5.25rem] rounded-md border border-[var(--color-border)] bg-white px-2 py-1 text-right text-sm font-medium tabular-nums"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           onBlur={saveAmount}
