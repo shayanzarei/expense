@@ -62,6 +62,15 @@ cp .env.example .env
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from **Project Settings → API**.  
 On your host (Vercel, Netlify, …), set the same two variables for production builds.
 
+### Vercel deploy
+
+1. **Settings → Environment Variables** — add exactly:
+   - `VITE_SUPABASE_URL` = `https://YOUR_REF.supabase.co` (no trailing slash)
+   - `VITE_SUPABASE_ANON_KEY` = **anon** / **publishable** key (not `service_role`)
+2. Enable for **Production**, **Preview**, and **Development**.
+3. **Deployments → Redeploy** after adding or changing variables (Vite bakes `VITE_*` in at **build** time).
+4. Do not wrap values in quotes in the Vercel UI.
+
 ### 3. Run locally
 
 ```bash

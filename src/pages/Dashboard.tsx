@@ -1,4 +1,6 @@
 import { AppTitle } from '../components/AppTitle'
+import { SupabaseConfigBanner } from '../components/SupabaseConfigBanner'
+import { supabaseConfigured } from '../lib/supabase'
 import { EmptyMonthBanner } from '../components/EmptyMonthBanner'
 import { IncomeHeader } from '../components/IncomeHeader'
 import { KhorojiLists } from '../components/KhorojiList'
@@ -15,6 +17,8 @@ export function Dashboard() {
     <div className="mx-auto min-h-dvh max-w-md bg-[var(--color-surface)]">
       <AppTitle />
       <MonthSelector />
+
+      {!supabaseConfigured && <SupabaseConfigBanner />}
 
       {error && (
         <div className="mx-4 mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">

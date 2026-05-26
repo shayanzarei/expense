@@ -7,7 +7,7 @@ import {
   formatYearMonthLabel,
   previousYearMonth,
 } from '../lib/month-utils'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseConfigured } from '../lib/supabase'
 import type {
   KhorojiItem,
   MonthlyBudget,
@@ -32,6 +32,11 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
   const budgetIds = useMemo(() => budgets.map((b) => b.id), [budgets])
 
   const fetchAll = useCallback(async () => {
+    if (!supabaseConfigured) {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -111,6 +116,8 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
   }, [fetchAll])
 
   useEffect(() => {
+    if (!supabaseConfigured) return
+
     const channel = supabase
       .channel(`finance-${yearMonth}`)
       .on(

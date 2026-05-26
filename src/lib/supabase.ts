@@ -1,16 +1,13 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database'
+import { getSupabaseEnv } from './env'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const env = getSupabaseEnv()
 
-if (!url || !anonKey) {
-  console.warn(
-    'Supabase env vars missing. Copy .env.example → .env with your production project keys.',
-  )
-}
+export const supabaseConfigured = env.isConfigured
+export const supabaseConfigError = env.configError
 
-export const supabase = createClient<Database>(
-  url ?? 'https://placeholder.supabase.co',
-  anonKey ?? 'placeholder',
-)
+/** Only created when URL + key are valid — avoids crash on bad Vercel env */
+export const supabase: SupabaseClient<Database> = env.isConfigured
+  ? createClient<Database>(env.url!, env.anonKey!)
+  : (null as unknown as SupabaseClient<Database>)
