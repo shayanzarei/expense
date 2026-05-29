@@ -30,7 +30,7 @@ export function PersonBudgetInput({ person, field }: Props) {
       <input
         type="number"
         inputMode="decimal"
-        className="w-full bg-transparent py-2.5 text-base font-semibold tabular-nums outline-none"
+        className="w-full bg-transparent py-2.5 text-base font-semibold tabular-nums text-[var(--color-ink)] outline-none"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}

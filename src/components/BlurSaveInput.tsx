@@ -37,7 +37,7 @@ export function BlurSaveNumberInput({
       type="number"
       inputMode="decimal"
       placeholder={placeholder}
-      className={className}
+      className={`text-[var(--color-ink)] ${className ?? ''}`}
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onBlur={save}
@@ -76,7 +76,7 @@ export function BlurSaveTextInput({
     <input
       type="text"
       placeholder={placeholder}
-      className={className}
+      className={`text-[var(--color-ink)] ${className ?? ''}`}
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onBlur={save}

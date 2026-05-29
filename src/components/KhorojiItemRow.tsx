@@ -63,7 +63,7 @@ export function KhorojiItemRow({ item }: Props) {
         <input
           type="number"
           inputMode="decimal"
-          className="w-[5.25rem] min-w-[5.25rem] rounded-md border border-[var(--color-border)] bg-white px-2 py-1 text-right text-sm font-medium tabular-nums"
+          className="w-[5.25rem] min-w-[5.25rem] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-right text-sm font-medium tabular-nums text-[var(--color-ink)]"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           onBlur={saveAmount}
@@ -77,7 +77,7 @@ export function KhorojiItemRow({ item }: Props) {
       <button
         type="button"
         onClick={onDelete}
-        className="flex h-8 w-8 shrink-0 items-center justify-center text-sm text-red-500/80 active:text-red-600"
+        className="flex h-8 w-8 shrink-0 items-center justify-center text-sm text-red-600 active:text-red-700 dark:text-red-400 dark:active:text-red-300"
         aria-label="Delete expense"
       >
         ✕

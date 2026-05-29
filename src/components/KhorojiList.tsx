@@ -28,10 +28,10 @@ function KhorojiSection({ person }: { person: PersonName }) {
           Total {formatEur(total)}
         </span>
       </div>
-      <p className="mb-2 text-[10px] text-[var(--color-muted)]">
+      <p className="mb-2 text-[10px] leading-relaxed text-[var(--color-subtle)]">
         Bills you pay from salary — separate from €200 shakhsi for hobbies & fun.
       </p>
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white px-3 shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 shadow-sm">
         {items.length > 0 ? (
           <ul>
             {items.map((item) => (
@@ -46,7 +46,7 @@ function KhorojiSection({ person }: { person: PersonName }) {
         <button
           type="button"
           onClick={() => void addKhoroji(person)}
-          className="my-3 w-full rounded-lg border border-dashed border-[var(--color-border)] py-2.5 text-sm font-medium text-[var(--color-muted)] active:bg-[var(--color-surface)]"
+          className="my-3 w-full rounded-lg border border-dashed border-[var(--color-border)] py-2.5 text-sm font-medium text-[var(--color-ink)] active:bg-[var(--color-surface)]"
         >
           + Add Expense Item
         </button>

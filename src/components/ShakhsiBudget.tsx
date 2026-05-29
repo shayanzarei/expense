@@ -7,11 +7,11 @@ export function ShakhsiBudget() {
       <h2 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--color-ink)]">
         <span aria-hidden>🎯</span> Shakhsi (Personal)
       </h2>
-      <p className="mb-2 text-xs text-[var(--color-muted)]">
+      <p className="mb-2 text-xs leading-relaxed text-[var(--color-subtle)]">
         Pocket money kept from salary (hobbies, fun) — not sent to ABN. Adjust per month
         (often {SHAKHSI_DEFAULT}€, sometimes more or less).
       </p>
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-sm">
         <div className="grid grid-cols-2 gap-3">
           {(['aryana', 'shayan'] as PersonName[]).map((person) => (
             <div key={person}>

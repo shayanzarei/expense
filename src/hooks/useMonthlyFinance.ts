@@ -112,7 +112,10 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
   }, [yearMonth])
 
   useEffect(() => {
-    void fetchAll()
+    const timer = setTimeout(() => {
+      void fetchAll()
+    }, 0)
+    return () => clearTimeout(timer)
   }, [fetchAll])
 
   useEffect(() => {
@@ -246,7 +249,13 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
       if (!budget) return []
       return khoroji
         .filter((k) => k.monthly_budget_id === budget.id)
-        .sort((a, b) => a.sort_order - b.sort_order)
+        .sort((a, b) => {
+          // Keep unpaid items at the top; paid items sink to bottom.
+          if (a.is_checked !== b.is_checked) {
+            return a.is_checked ? 1 : -1
+          }
+          return a.sort_order - b.sort_order
+        })
     },
     [budgets, khoroji],
   )

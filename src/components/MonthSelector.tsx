@@ -17,7 +17,7 @@ export function MonthSelector() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-white/95 px-4 py-3 backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-[var(--color-card)]/95 px-4 py-3 backdrop-blur-md">
       <div className="flex items-center justify-between">
         <button
           type="button"
