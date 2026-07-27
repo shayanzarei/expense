@@ -19,6 +19,8 @@ import { SHAKHSI_DEFAULT } from '../types'
 
 const PERSONS: PersonName[] = ['aryana', 'shayan']
 
+type FetchOptions = { silent?: boolean }
+
 export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
   const [yearMonth, setYearMonth] = useState(initialMonth)
   const [budgets, setBudgets] = useState<MonthlyBudget[]>([])
@@ -31,14 +33,18 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
 
   const budgetIds = useMemo(() => budgets.map((b) => b.id), [budgets])
 
-  const fetchAll = useCallback(async () => {
+  const fetchAll = useCallback(async (options?: FetchOptions) => {
+    const silent = options?.silent ?? false
+
     if (!supabaseConfigured) {
       setLoading(false)
       return
     }
 
-    setLoading(true)
-    setError(null)
+    if (!silent) {
+      setLoading(true)
+      setError(null)
+    }
 
     const [budgetRes, groceryRes, metaRes] = await Promise.all([
       supabase
@@ -59,17 +65,17 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
 
     if (budgetRes.error) {
       setError(budgetRes.error.message)
-      setLoading(false)
+      if (!silent) setLoading(false)
       return
     }
     if (groceryRes.error) {
       setError(groceryRes.error.message)
-      setLoading(false)
+      if (!silent) setLoading(false)
       return
     }
     if (metaRes.error) {
       setError(metaRes.error.message)
-      setLoading(false)
+      if (!silent) setLoading(false)
       return
     }
 
@@ -84,7 +90,7 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
           .single()
         if (insertErr) {
           setError(insertErr.message)
-          setLoading(false)
+          if (!silent) setLoading(false)
           return
         }
         if (data) budgetRows = [...budgetRows, data as MonthlyBudget]
@@ -108,7 +114,7 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
 
     setGroceryLogs((groceryRes.data ?? []) as WeeklyGroceryLog[])
     setGroceryMeta((metaRes.data as MonthlyGroceryMeta | null) ?? null)
-    setLoading(false)
+    if (!silent) setLoading(false)
   }, [yearMonth])
 
   useEffect(() => {
@@ -126,22 +132,22 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'monthly_budgets' },
-        () => void fetchAll(),
+        () => void fetchAll({ silent: true }),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'khoroji_items' },
-        () => void fetchAll(),
+        () => void fetchAll({ silent: true }),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'weekly_grocery_logs' },
-        () => void fetchAll(),
+        () => void fetchAll({ silent: true }),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'monthly_grocery_meta' },
-        () => void fetchAll(),
+        () => void fetchAll({ silent: true }),
       )
       .subscribe()
 
@@ -171,11 +177,21 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
     ) => {
       const budget = budgets.find((b) => b.person === person)
       if (!budget) return
+
+      const previous = budgets
+      setBudgets((rows) =>
+        rows.map((b) => (b.id === budget.id ? { ...b, ...patch } : b)),
+      )
+      setError(null)
+
       const { error: err } = await supabase
         .from('monthly_budgets')
         .update(patch)
         .eq('id', budget.id)
-      if (err) setError(err.message)
+      if (err) {
+        setBudgets(previous)
+        setError(err.message)
+      }
     },
     [budgets],
   )
@@ -187,60 +203,175 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
       const maxOrder = khoroji
         .filter((k) => k.monthly_budget_id === budget.id)
         .reduce((m, k) => Math.max(m, k.sort_order), -1)
-      const { error: err } = await supabase.from('khoroji_items').insert({
-        monthly_budget_id: budget.id,
-        label: 'Nieuwe khoroji',
-        amount: 0,
-        sort_order: maxOrder + 1,
-      })
-      if (err) setError(err.message)
+
+      setError(null)
+      const { data, error: err } = await supabase
+        .from('khoroji_items')
+        .insert({
+          monthly_budget_id: budget.id,
+          label: 'Nieuwe khoroji',
+          amount: 0,
+          sort_order: maxOrder + 1,
+        })
+        .select()
+        .single()
+
+      if (err) {
+        setError(err.message)
+        return
+      }
+      if (data) {
+        setKhoroji((rows) => [...rows, data as KhorojiItem])
+      }
     },
     [budgets, khoroji],
   )
 
   const updateKhoroji = useCallback(
     async (id: string, patch: Partial<KhorojiItem>) => {
+      const previous = khoroji
+      setKhoroji((rows) =>
+        rows.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+      )
+      setError(null)
+
       const { error: err } = await supabase
         .from('khoroji_items')
         .update(patch)
         .eq('id', id)
-      if (err) setError(err.message)
+      if (err) {
+        setKhoroji(previous)
+        setError(err.message)
+      }
     },
-    [],
+    [khoroji],
   )
 
-  const deleteKhoroji = useCallback(async (id: string) => {
-    const { error: err } = await supabase.from('khoroji_items').delete().eq('id', id)
-    if (err) setError(err.message)
-  }, [])
+  const deleteKhoroji = useCallback(
+    async (id: string) => {
+      const previous = khoroji
+      setKhoroji((rows) => rows.filter((item) => item.id !== id))
+      setError(null)
+
+      const { error: err } = await supabase
+        .from('khoroji_items')
+        .delete()
+        .eq('id', id)
+      if (err) {
+        setKhoroji(previous)
+        setError(err.message)
+      }
+    },
+    [khoroji],
+  )
 
   const upsertGroceryWeek = useCallback(
     async (
       weekNumber: number,
       patch: { amount_used?: number; notes?: string },
     ) => {
-      const { error: err } = await supabase.from('weekly_grocery_logs').upsert(
-        {
-          year_month: yearMonth,
-          week_number: weekNumber,
-          ...patch,
-        },
-        { onConflict: 'year_month,week_number' },
-      )
-      if (err) setError(err.message)
+      const previous = groceryLogs
+      const existing = groceryLogs.find((l) => l.week_number === weekNumber)
+      const now = new Date().toISOString()
+
+      if (existing) {
+        setGroceryLogs((rows) =>
+          rows.map((l) =>
+            l.week_number === weekNumber ? { ...l, ...patch } : l,
+          ),
+        )
+      } else {
+        setGroceryLogs((rows) => [
+          ...rows,
+          {
+            id: `temp-${weekNumber}`,
+            year_month: yearMonth,
+            week_number: weekNumber,
+            amount_used: patch.amount_used ?? 0,
+            notes: patch.notes ?? null,
+            created_at: now,
+            updated_at: now,
+          },
+        ])
+      }
+      setError(null)
+
+      const { data, error: err } = await supabase
+        .from('weekly_grocery_logs')
+        .upsert(
+          {
+            year_month: yearMonth,
+            week_number: weekNumber,
+            ...patch,
+          },
+          { onConflict: 'year_month,week_number' },
+        )
+        .select()
+        .single()
+
+      if (err) {
+        setGroceryLogs(previous)
+        setError(err.message)
+        return
+      }
+
+      if (data) {
+        const row = data as WeeklyGroceryLog
+        setGroceryLogs((rows) => {
+          const withoutTemp = rows.filter(
+            (l) => l.week_number !== weekNumber || !l.id.startsWith('temp-'),
+          )
+          const idx = withoutTemp.findIndex((l) => l.week_number === weekNumber)
+          if (idx >= 0) {
+            const next = [...withoutTemp]
+            next[idx] = row
+            return next
+          }
+          return [...withoutTemp, row]
+        })
+      }
     },
-    [yearMonth],
+    [groceryLogs, yearMonth],
   )
 
   const updateLonaUsed = useCallback(
     async (amount: number) => {
-      const { error: err } = await supabase.from('monthly_grocery_meta').upsert(
-        { year_month: yearMonth, lona_amount_used: amount },
-        { onConflict: 'year_month' },
-      )
-      if (err) setError(err.message)
+      const previous = groceryMeta
+      const now = new Date().toISOString()
+
+      if (groceryMeta) {
+        setGroceryMeta({ ...groceryMeta, lona_amount_used: amount })
+      } else {
+        setGroceryMeta({
+          id: 'temp-lona',
+          year_month: yearMonth,
+          lona_amount_used: amount,
+          created_at: now,
+          updated_at: now,
+        })
+      }
+      setError(null)
+
+      const { data, error: err } = await supabase
+        .from('monthly_grocery_meta')
+        .upsert(
+          { year_month: yearMonth, lona_amount_used: amount },
+          { onConflict: 'year_month' },
+        )
+        .select()
+        .single()
+
+      if (err) {
+        setGroceryMeta(previous)
+        setError(err.message)
+        return
+      }
+
+      if (data) {
+        setGroceryMeta(data as MonthlyGroceryMeta)
+      }
     },
-    [yearMonth],
+    [groceryMeta, yearMonth],
   )
 
   const khorojiForPerson = useCallback(
@@ -348,7 +479,7 @@ export function useMonthlyFinance(initialMonth = defaultYearMonth()) {
         { onConflict: 'year_month' },
       )
 
-      await fetchAll()
+      await fetchAll({ silent: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Duplicate failed')
     } finally {
