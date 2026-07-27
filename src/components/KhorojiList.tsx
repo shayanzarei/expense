@@ -17,6 +17,10 @@ function KhorojiSection({ person }: { person: PersonName }) {
   const { khorojiForPerson, addKhoroji, calculations } = useFinance()
   const items = khorojiForPerson(person)
   const total = calculations[person].khorojiTotal
+  const checkedTotal = items
+    .filter((item) => item.is_checked)
+    .reduce((sum, item) => sum + item.amount, 0)
+  const remaining = total - checkedTotal
 
   return (
     <div>
@@ -24,9 +28,14 @@ function KhorojiSection({ person }: { person: PersonName }) {
         <h2 className="flex items-center gap-1.5 text-sm font-bold text-[var(--color-expense)]">
           <span aria-hidden>↑</span> Khoroji — {PERSON_LABELS[person]}
         </h2>
-        <span className="mr-2 text-sm font-semibold tabular-nums text-[var(--color-expense)]">
-          Total {formatEur(total)}
-        </span>
+        <div className="mr-2 flex flex-col items-end gap-0.5 tabular-nums">
+          <span className="text-sm font-semibold text-[var(--color-expense)]">
+            Total {formatEur(total)}
+          </span>
+          <span className="text-[10px] font-medium text-[var(--color-muted)]">
+            Remaining {formatEur(remaining)}
+          </span>
+        </div>
       </div>
       <p className="mb-2 text-[10px] leading-relaxed text-[var(--color-subtle)]">
         Bills you pay from salary — separate from €200 shakhsi for hobbies & fun.
