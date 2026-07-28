@@ -9,17 +9,26 @@ interface Props {
 export function KhorojiItemRow({ item }: Props) {
   const { updateKhoroji, deleteKhoroji } = useFinance()
   const [label, setLabel] = useState(item.label)
-  const [amount, setAmount] = useState(String(item.amount))
+  const [amount, setAmount] = useState(
+    item.amount > 0 ? String(item.amount) : '',
+  )
+  const [justSaved, setJustSaved] = useState(false)
 
   useEffect(() => {
     setLabel(item.label)
-    setAmount(String(item.amount))
+    setAmount(item.amount > 0 ? String(item.amount) : '')
   }, [item.id, item.label, item.amount])
+
+  const flashSaved = () => {
+    setJustSaved(true)
+    window.setTimeout(() => setJustSaved(false), 900)
+  }
 
   const saveLabel = () => {
     const trimmed = label.trim()
     if (trimmed === item.label) return
     void updateKhoroji(item.id, { label: trimmed || item.label })
+    flashSaved()
   }
 
   const saveAmount = () => {
@@ -27,6 +36,7 @@ export function KhorojiItemRow({ item }: Props) {
     const next = Number.isNaN(parsed) ? 0 : parsed
     if (next === item.amount) return
     void updateKhoroji(item.id, { amount: next })
+    flashSaved()
   }
 
   const toggleChecked = () =>
@@ -37,20 +47,42 @@ export function KhorojiItemRow({ item }: Props) {
     void deleteKhoroji(item.id)
   }
 
+  const muted = item.is_checked
+
   return (
-    <li className="flex items-center gap-2 border-b border-[var(--color-border)] py-2.5 last:border-0">
+    <li
+      className={`flex items-center gap-2 border-b border-[var(--color-border)] px-2 py-2.5 last:border-0 ${
+        muted ? 'opacity-55' : ''
+      }`}
+    >
       <button
         type="button"
         onClick={toggleChecked}
-        className="flex h-8 w-8 shrink-0 items-center justify-center text-base"
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+          item.is_checked
+            ? 'border-[var(--color-income)] bg-[var(--color-income)] text-white'
+            : 'border-[var(--color-border)] bg-transparent'
+        }`}
         aria-label={item.is_checked ? 'Mark unpaid' : 'Mark paid'}
       >
-        {item.is_checked ? '✅' : '○'}
+        {item.is_checked ? (
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
+            <path
+              d="M3.5 8.5 6.5 11.5 12.5 4.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : null}
       </button>
 
       <input
         type="text"
-        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+        className={`min-w-0 flex-1 bg-transparent text-sm outline-none ${
+          muted ? 'text-[var(--color-hint)] line-through' : 'text-[var(--color-ink)]'
+        }`}
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         onBlur={saveLabel}
@@ -60,10 +92,11 @@ export function KhorojiItemRow({ item }: Props) {
       />
 
       <div className="flex shrink-0 items-center gap-1">
+        <span className="text-xs text-[var(--color-hint)]">€</span>
         <input
           type="number"
           inputMode="decimal"
-          className="w-[5.25rem] min-w-[5.25rem] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-right text-sm font-medium tabular-nums text-[var(--color-ink)]"
+          className="w-[4.75rem] rounded-full glass-pill px-2 py-1 text-right text-sm font-medium tabular-nums text-[var(--color-ink)] outline-none"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           onBlur={saveAmount}
@@ -71,13 +104,19 @@ export function KhorojiItemRow({ item }: Props) {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
         />
-        <span className="text-sm text-[var(--color-muted)]">€</span>
+        {justSaved ? (
+          <span className="w-8 text-[9px] font-medium text-[var(--color-income)]">
+            saved
+          </span>
+        ) : (
+          <span className="w-8" />
+        )}
       </div>
 
       <button
         type="button"
         onClick={onDelete}
-        className="flex h-8 w-8 shrink-0 items-center justify-center text-sm text-red-600 active:text-red-700 dark:text-red-400 dark:active:text-red-300"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs text-[var(--color-hint)] active:bg-[var(--color-pill)] active:text-[var(--color-expense)]"
         aria-label="Delete expense"
       >
         ✕

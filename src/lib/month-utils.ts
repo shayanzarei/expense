@@ -40,3 +40,16 @@ export function defaultYearMonth(): string {
 export function canGoToPreviousMonth(ym: string): boolean {
   return ym > FIRST_YEAR_MONTH
 }
+
+/** Day-in-month progress for the selected month (uses today when viewing current month). */
+export function monthDayProgress(ym: string): { day: number; daysInMonth: number } {
+  const { year, month } = parseYearMonth(ym)
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const now = new Date()
+  const isCurrent =
+    now.getFullYear() === year && now.getMonth() + 1 === month
+  return {
+    day: isCurrent ? now.getDate() : daysInMonth,
+    daysInMonth,
+  }
+}

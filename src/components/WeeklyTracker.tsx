@@ -7,56 +7,70 @@ import {
   KHORDO_KHORAK_MONTHLY_TOTAL,
   KHORDO_KHORAK_WEEKLY_TARGET,
 } from '../types'
-import { BlurSaveNumberInput, BlurSaveTextInput } from './BlurSaveInput'
+import { BlurSaveNumberInput } from './BlurSaveInput'
+import { SectionHeading } from './DesignPrimitives'
 
 function progressColor(used: number, target: number): string {
   if (used <= 0) return 'bg-[var(--color-border)]'
   const ratio = used / target
-  if (ratio > 1) return 'bg-red-500'
+  if (ratio > 1) return 'bg-[var(--color-expense)]'
   if (ratio >= 0.85) return 'bg-amber-400'
-  return 'bg-green-500'
+  return 'bg-[var(--color-income)]'
 }
 
-function budgetStatusClass(ok: boolean, emphasize = false): string {
-  const weight = emphasize ? 'font-medium' : 'font-semibold'
-  return ok
-    ? `${weight} text-green-700 dark:text-green-400`
-    : `${weight} text-red-700 dark:text-red-400`
+function statusLabel(used: number, delta: number): {
+  text: string
+  className: string
+} {
+  if (used <= 0) {
+    return { text: 'not spent yet', className: 'text-[var(--color-hint)]' }
+  }
+  if (delta >= 0) {
+    return {
+      text: `${formatEur(delta)} left`,
+      className: 'text-[var(--color-income)]',
+    }
+  }
+  return {
+    text: `${formatEur(-delta)} over`,
+    className: 'text-[var(--color-expense)]',
+  }
+}
+
+function weekRangeLabel(weekNumber: number): string {
+  const start = (weekNumber - 1) * 7 + 1
+  const end = weekNumber === 4 ? 31 : weekNumber * 7
+  return `${start}–${Math.min(end, 31)}`
 }
 
 function GroceryWeekRow({
   week,
   onSaveAmount,
-  onSaveNotes,
 }: {
   week: GroceryWeekSummary
   onSaveAmount: (amount: number) => void
-  onSaveNotes: (notes: string) => void
 }) {
   const pct = Math.min((week.amountUsed / week.target) * 100, 100)
   const over = week.amountUsed > week.target
+  const status = statusLabel(week.amountUsed, week.delta)
 
   return (
-    <li className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-sm">
-      <div className="mb-1 flex items-baseline justify-between">
-        <span className="text-sm font-semibold">Week {week.weekNumber}</span>
-        <span className="text-xs text-[var(--color-muted)]">Target: {week.target}€</span>
-      </div>
-
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-1">
-        <span className="text-sm text-[var(--color-ink)]">
-          {week.amountUsed > 0 ? `${formatEur(week.amountUsed)} used` : '—'}
-        </span>
-        <span className={`text-xs ${budgetStatusClass(week.delta >= 0)}`}>
-          {week.amountUsed > 0
-            ? week.delta >= 0
-              ? `${formatEur(week.delta)} left`
-              : `${formatEur(-week.delta)} over`
-            : `${week.target}€ budget`}
+    <li className="border-b border-[var(--color-border)] px-3 py-3 last:border-0">
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <div>
+          <span className="text-sm font-semibold text-[var(--color-ink)]">
+            Week {week.weekNumber}
+          </span>
+          <span className="ml-2 text-[10px] text-[var(--color-hint)]">
+            {weekRangeLabel(week.weekNumber)} · target {formatEur(week.target)}
+          </span>
+        </div>
+        <span className={`text-[11px] font-semibold tabular-nums ${status.className}`}>
+          {status.text}
         </span>
       </div>
 
-      <div className="mb-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
+      <div className="mb-2.5 h-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
         <div
           className={`h-full rounded-full transition-all ${progressColor(week.amountUsed, week.target)}`}
           style={{ width: over ? '100%' : `${pct}%` }}
@@ -64,22 +78,15 @@ function GroceryWeekRow({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm text-[var(--color-muted)]">€</span>
+        <span className="text-sm text-[var(--color-hint)]">€</span>
         <BlurSaveNumberInput
           saved={week.amountUsed}
           syncKey={week.weekNumber}
-          placeholder="Amount used"
-          className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums"
+          placeholder="0"
+          className="flex-1 rounded-full glass-pill px-3 py-1.5 text-sm tabular-nums"
           onSave={onSaveAmount}
         />
       </div>
-      <BlurSaveTextInput
-        saved={week.notes ?? ''}
-        syncKey={week.weekNumber}
-        placeholder="Notes"
-        className="mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs"
-        onSave={onSaveNotes}
-      />
     </li>
   )
 }
@@ -89,97 +96,77 @@ export function WeeklyTracker() {
   const {
     groceryWeeks,
     groceryMonthlyUsed,
-    groceryMonthlyRemaining,
     lonaUsed,
     lonaRemaining,
-    combinedMonthlyUsed,
     combinedMonthlyRemaining,
   } = calculations
 
+  const lonaStatus = statusLabel(lonaUsed, lonaRemaining)
+
   return (
-    <section className="mx-4 mt-5">
-      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--color-grocery)]">
-        <span aria-hidden>🧺</span> Khordo Khorak (Weekly Groceries)
-      </h2>
+    <section className="mx-4 mt-5 mb-2">
+      <SectionHeading
+        mark="grocery"
+        title="Khordo khorak"
+        total={`${formatEur(groceryMonthlyUsed)} / ${formatEur(KHORDO_KHORAK_MONTHLY_TARGET)}`}
+        subtitle={`${KHORDO_KHORAK_WEEKLY_TARGET}€/week groceries · Lona ${KHORDO_KHORAK_LONA_MONTHLY}€ · pool ${formatEur(KHORDO_KHORAK_MONTHLY_TOTAL)}`}
+      />
 
-      <p className="mb-3 text-xs leading-relaxed text-[var(--color-subtle)]">
-        Groceries: {KHORDO_KHORAK_WEEKLY_TARGET}€/week ({formatEur(KHORDO_KHORAK_MONTHLY_TARGET)}
-        /mo) · Lona: {KHORDO_KHORAK_LONA_MONTHLY}€/month
-      </p>
+      <div className="glass-panel overflow-hidden rounded-2xl">
+        <ul>
+          {groceryWeeks.map((week) => (
+            <GroceryWeekRow
+              key={week.weekNumber}
+              week={week}
+              onSaveAmount={(amount_used) =>
+                void upsertGroceryWeek(week.weekNumber, { amount_used })
+              }
+            />
+          ))}
+        </ul>
 
-      <ul className="space-y-3">
-        {groceryWeeks.map((week) => (
-          <GroceryWeekRow
-            key={week.weekNumber}
-            week={week}
-            onSaveAmount={(amount_used) =>
-              void upsertGroceryWeek(week.weekNumber, { amount_used })
-            }
-            onSaveNotes={(notes) =>
-              void upsertGroceryWeek(week.weekNumber, { notes })
-            }
-          />
-        ))}
-      </ul>
+        <div className="border-t border-[var(--color-border)] px-3 py-3">
+          <div className="mb-1 flex items-baseline justify-between gap-2">
+            <span className="text-sm font-semibold text-[var(--color-ink)]">Lona</span>
+            <span className={`text-[11px] font-semibold tabular-nums ${lonaStatus.className}`}>
+              {lonaStatus.text}
+            </span>
+          </div>
+          <div className="mb-2.5 h-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
+            <div
+              className={`h-full rounded-full transition-all ${progressColor(lonaUsed, KHORDO_KHORAK_LONA_MONTHLY)}`}
+              style={{
+                width: `${Math.min((lonaUsed / KHORDO_KHORAK_LONA_MONTHLY) * 100, 100)}%`,
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[var(--color-hint)]">€</span>
+            <BlurSaveNumberInput
+              saved={lonaUsed}
+              syncKey="lona"
+              placeholder="0"
+              className="flex-1 rounded-full glass-pill px-3 py-1.5 text-sm tabular-nums"
+              onSave={(v) => void updateLonaUsed(v)}
+            />
+          </div>
+        </div>
 
-      <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-sm">
-        <div className="mb-2 flex items-baseline justify-between">
-          <span className="text-sm font-semibold">Lona (this month)</span>
-          <span className="text-xs text-[var(--color-muted)]">
-            Budget {KHORDO_KHORAK_LONA_MONTHLY}€
-          </span>
-        </div>
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-1">
-          <span className="text-sm text-[var(--color-ink)]">
-            {lonaUsed > 0 ? `${formatEur(lonaUsed)} used` : '—'}
-          </span>
-          <span className={`text-xs ${budgetStatusClass(lonaRemaining >= 0)}`}>
-            {lonaUsed > 0
-              ? lonaRemaining >= 0
-                ? `${formatEur(lonaRemaining)} left`
-                : `${formatEur(-lonaRemaining)} over`
-              : `${KHORDO_KHORAK_LONA_MONTHLY}€ budget`}
-          </span>
-        </div>
-        <div className="mb-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
-          <div
-            className={`h-full rounded-full transition-all ${progressColor(lonaUsed, KHORDO_KHORAK_LONA_MONTHLY)}`}
-            style={{
-              width: `${Math.min((lonaUsed / KHORDO_KHORAK_LONA_MONTHLY) * 100, 100)}%`,
-            }}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--color-muted)]">€</span>
-          <BlurSaveNumberInput
-            saved={lonaUsed}
-            syncKey="lona"
-            placeholder="Lona spent this month"
-            className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm tabular-nums"
-            onSave={(v) => void updateLonaUsed(v)}
-          />
+        <div className="border-t border-[var(--color-border)] bg-white/25 px-3 py-3 dark:bg-white/5">
+          <p className="text-center text-[12px] font-medium tabular-nums text-[var(--color-ink)]">
+            Left in the joint pool:{' '}
+            <span
+              className={
+                combinedMonthlyRemaining >= 0
+                  ? 'text-[var(--color-income)]'
+                  : 'text-[var(--color-expense)]'
+              }
+            >
+              {formatEur(combinedMonthlyRemaining)}
+            </span>
+          </p>
         </div>
       </div>
-
-      <p className="mb-2 mt-3 text-xs tabular-nums text-[var(--color-ink)]">
-        <span className="text-[var(--color-subtle)]">Groceries only:</span>{' '}
-        {formatEur(groceryMonthlyUsed)} / {formatEur(KHORDO_KHORAK_MONTHLY_TARGET)} ·{' '}
-        <span className={budgetStatusClass(groceryMonthlyRemaining >= 0)}>
-          {groceryMonthlyRemaining >= 0
-            ? `${formatEur(groceryMonthlyRemaining)} left`
-            : `${formatEur(-groceryMonthlyRemaining)} over`}
-        </span>
-      </p>
-
-      <p className="text-xs tabular-nums text-[var(--color-ink)]">
-        <span className="text-[var(--color-subtle)]">Combined</span> (
-        {formatEur(KHORDO_KHORAK_MONTHLY_TOTAL)}): {formatEur(combinedMonthlyUsed)} used ·{' '}
-        <span className={budgetStatusClass(combinedMonthlyRemaining >= 0, true)}>
-          {combinedMonthlyRemaining >= 0
-            ? `${formatEur(combinedMonthlyRemaining)} left`
-            : `${formatEur(-combinedMonthlyRemaining)} over`}
-        </span>
-      </p>
     </section>
   )
 }

@@ -12,10 +12,10 @@ interface Props {
 export function PersonBudgetInput({ person, field }: Props) {
   const { budgetForPerson, updateBudget } = useFinance()
   const saved = budgetForPerson(person)?.[field] ?? 0
-  const [value, setValue] = useState(String(saved))
+  const [value, setValue] = useState(saved > 0 ? String(saved) : '')
 
   useEffect(() => {
-    setValue(String(saved))
+    setValue(saved > 0 ? String(saved) : '')
   }, [person, field, saved])
 
   const save = () => {
@@ -26,11 +26,12 @@ export function PersonBudgetInput({ person, field }: Props) {
   }
 
   return (
-    <div className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2">
+    <div className="flex min-w-0 flex-1 items-center rounded-full glass-pill px-3">
+      <span className="shrink-0 text-sm text-[var(--color-hint)]">€</span>
       <input
         type="number"
         inputMode="decimal"
-        className="w-full bg-transparent py-2.5 text-base font-semibold tabular-nums text-[var(--color-ink)] outline-none"
+        className="w-full bg-transparent py-2 pl-1.5 text-right text-[15px] font-semibold tabular-nums text-[var(--color-ink)] outline-none"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
@@ -38,7 +39,6 @@ export function PersonBudgetInput({ person, field }: Props) {
           if (e.key === 'Enter') e.currentTarget.blur()
         }}
       />
-      <span className="shrink-0 text-sm text-[var(--color-muted)]">€</span>
     </div>
   )
 }

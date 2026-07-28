@@ -1,16 +1,23 @@
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
+import { OverlapAvatars } from './DesignPrimitives'
 
 export function AppTitle() {
   return (
-    <div className="bg-[var(--color-card)] px-4 pb-1 pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="relative flex items-center justify-center">
-        <h1 className="text-center text-lg font-bold tracking-tight text-[var(--color-ink)]">
-          Expenses
-        </h1>
-        <div className="absolute right-0">
+    <div className="glass-chrome px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-[var(--color-ink)]">
+            Expenses
+          </h1>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-hint)]">
+            Vorodi &amp; Khoroji tracker
+          </p>
+        </div>
+        <div className="flex items-center gap-2 pt-0.5">
+          <OverlapAvatars />
           <AnimatedThemeToggler
             variant="hexagon"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-sm active:scale-95"
+            className="glass-pill flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-ink)] active:scale-95"
           />
         </div>
       </div>

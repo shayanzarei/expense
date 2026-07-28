@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { ShineBorder } from '@/components/ui/shine-border'
 import { useFinance } from '../context/MonthlyFinanceContext'
 import { formatEur, formatTransferLine } from '../lib/math-engine'
 import { TRANSFER_EMOJI } from '../lib/constants'
 import { PERSON_LABELS, type PersonName } from '../types'
 
-function abnStatus(delta: number): { label: string; className: string } {
+function statusChip(delta: number): { label: string; className: string } {
   if (delta >= 0) {
     return {
-      label: delta > 0 ? `${formatEur(delta)} over target` : 'On target',
-      className: 'text-green-700 dark:text-green-400',
+      label: delta > 0 ? `${formatEur(delta)} over` : 'On target',
+      className:
+        'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30',
     }
   }
   return {
-    label: `${formatEur(-delta)} short for ABN`,
-    className: 'text-amber-700 dark:text-amber-400',
+    label: `${formatEur(-delta)} short`,
+    className: 'bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/30',
   }
 }
 
@@ -30,7 +30,8 @@ export function TransferResultCard() {
       person: p,
       snap,
       text: formatTransferLine(p, transferAmount, TRANSFER_EMOJI[p]),
-      status: abnStatus(snap.abnDelta),
+      status: statusChip(snap.abnDelta),
+      transferAmount,
     }
   })
 
@@ -41,80 +42,84 @@ export function TransferResultCard() {
   }
 
   return (
-    <footer className="mx-4 mt-6 mb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-transfer)] shadow-lg">
-        <ShineBorder
-          borderWidth={1.5}
-          duration={12}
-          shineColor={['#e5e5ea', '#ffffff', '#c7c7cc', '#ffffff', '#e5e5ea']}
-          className="dark:hidden"
-        />
-        <ShineBorder
-          borderWidth={1.5}
-          duration={12}
-          shineColor={['#2b303a', '#4a5260', '#2b303a']}
-          className="hidden dark:block"
-        />
-        <div className="flex items-center justify-between bg-[var(--color-transfer-header)] px-4 py-2.5">
-          <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-transfer-fg)]">
-            Final Transfer to ABN AMRO
+    <section className="mx-4 mt-6">
+      <div className="glass-panel overflow-hidden rounded-2xl bg-[var(--color-transfer)]">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-transfer-fg)]">
+            Final transfer · ABN AMRO
           </h2>
         </div>
 
-        <div className="space-y-3 p-4">
-          {lines.map(({ person, snap, text, status }) => (
-            <button
-              key={person}
-              type="button"
-              onClick={() => void copyOne(person, text)}
-              className="relative w-full rounded-lg bg-[var(--color-transfer-panel)] p-4 text-left active:opacity-90"
-            >
-              <span className="absolute right-3 top-3 text-lg">
-                {TRANSFER_EMOJI[person]}
-              </span>
-              <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-transfer-muted-fg)]">
-                {PERSON_LABELS[person]}
-              </p>
+        <div className="space-y-3 px-3 pb-4">
+          {lines.map(({ person, snap, text, status, transferAmount }) => {
+            const fillRatio = Math.min(
+              Math.max(transferAmount / Math.max(snap.abnTarget, 1), 0),
+              1.15,
+            )
+            const barPct = Math.min(fillRatio * 100, 100)
+            const barColor =
+              snap.abnDelta >= 0 ? 'bg-emerald-400' : 'bg-amber-400'
+            const notchPct = Math.min(
+              (snap.abnTarget / Math.max(transferAmount, snap.abnTarget, 1)) *
+                100,
+              100,
+            )
 
-              <p className="mt-1 text-3xl font-bold tabular-nums text-[var(--color-transfer-fg)]">
-                {formatEur(snap.availableForAbn)}
-              </p>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-transfer-subtle-fg)]">
-                Available for ABN
-              </p>
+            return (
+              <div
+                key={person}
+                className="rounded-2xl bg-[var(--color-transfer-panel)] p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-transfer-muted-fg)]">
+                    {PERSON_LABELS[person]} {TRANSFER_EMOJI[person]}
+                  </p>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${status.className}`}
+                  >
+                    {status.label}
+                  </span>
+                </div>
 
-              <p className="mt-2 text-[10px] tabular-nums leading-relaxed text-[var(--color-transfer-muted-fg)]">
-                {formatEur(snap.vorodi)} salary − {formatEur(snap.khorojiTotal)} khoroji
-                − {formatEur(snap.shakhsi)} shakhsi
-              </p>
-
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-[10px] text-[var(--color-transfer-subtle-fg)]">
-                  Target {formatEur(snap.abnTarget)}
-                </span>
-                <span className={`text-[10px] font-semibold ${status.className}`}>
-                  {status.label}
-                </span>
-              </div>
-
-              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-transfer-subtle-fg)]">
-                BE ABN AMRO
-              </p>
-              {copied === person && (
-                <p className="mt-1 text-[10px] font-medium text-green-700 dark:text-green-400">
-                  Copied ✓
+                <p className="mt-2 text-[34px] font-bold leading-none tracking-tight tabular-nums text-[var(--color-transfer-fg)]">
+                  {formatEur(transferAmount)}
                 </p>
-              )}
-            </button>
-          ))}
-        </div>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-transfer-subtle-fg)]">
+                  To transfer
+                </p>
 
-        <p className="border-t border-[var(--color-transfer-divider)] px-4 py-3 text-[10px] leading-relaxed text-[var(--color-transfer-muted-fg)]">
-          Flow: salary → khoroji → shakhsi → available for ABN → compare to target
-          (€1,573 / €1,575). Weekly khordo + Lona below tracks how the joint account
-          spends the €900 pool after you transfer.
-        </p>
+                <p className="mt-3 text-[10px] tabular-nums leading-relaxed text-[var(--color-transfer-muted-fg)]">
+                  ({formatEur(snap.vorodi)} vorodi − {formatEur(snap.khorojiTotal)}{' '}
+                  khoroji − {formatEur(snap.shakhsi)} shakhsi)
+                </p>
+
+                <div className="relative mt-3 h-1.5 rounded-full bg-white/10">
+                  <div
+                    className={`h-full rounded-full transition-all ${barColor}`}
+                    style={{ width: `${barPct}%` }}
+                  />
+                  <span
+                    className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 rounded-full bg-white"
+                    style={{ left: `${notchPct}%` }}
+                    title={`Target ${formatEur(snap.abnTarget)}`}
+                  />
+                </div>
+                <p className="mt-1.5 text-[9px] text-[var(--color-transfer-subtle-fg)]">
+                  Target {formatEur(snap.abnTarget)}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => void copyOne(person, text)}
+                  className="mt-3 w-full rounded-full border border-white/15 bg-white/5 py-2.5 text-xs font-semibold text-[var(--color-transfer-fg)] active:bg-white/10"
+                >
+                  {copied === person ? 'Copied ✓' : 'Copy transfer text'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
       </div>
-    </footer>
+    </section>
   )
 }
