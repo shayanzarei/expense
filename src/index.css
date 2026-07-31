@@ -19,10 +19,10 @@
   --color-grocery: #d97706;
   --color-border: rgba(255, 255, 255, 0.55);
   --color-subtle: #3d3d4f;
-  --color-transfer: rgba(26, 24, 72, 0.78);
+  --color-transfer: #1a1848;
   --color-transfer-fg: #f5f5ff;
-  --color-transfer-muted-fg: rgba(245, 245, 255, 0.72);
-  --color-transfer-subtle-fg: rgba(245, 245, 255, 0.48);
+  --color-transfer-muted-fg: rgba(245, 245, 255, 0.78);
+  --color-transfer-subtle-fg: rgba(245, 245, 255, 0.55);
   --color-transfer-panel: rgba(255, 255, 255, 0.1);
   --color-transfer-header: rgba(0, 0, 0, 0.12);
   --color-transfer-divider: rgba(255, 255, 255, 0.14);
@@ -46,11 +46,11 @@ html {
   --color-grocery: #fbbf24;
   --color-border: rgba(255, 255, 255, 0.12);
   --color-subtle: #c2c7d6;
-  --color-transfer: rgba(26, 24, 72, 0.72);
+  --color-transfer: #1a1848;
   --color-transfer-fg: #f5f5ff;
-  --color-transfer-muted-fg: rgba(245, 245, 255, 0.72);
-  --color-transfer-subtle-fg: rgba(245, 245, 255, 0.48);
-  --color-transfer-panel: rgba(255, 255, 255, 0.08);
+  --color-transfer-muted-fg: rgba(245, 245, 255, 0.78);
+  --color-transfer-subtle-fg: rgba(245, 245, 255, 0.55);
+  --color-transfer-panel: rgba(255, 255, 255, 0.1);
   --color-transfer-header: rgba(0, 0, 0, 0.18);
   --color-transfer-divider: rgba(255, 255, 255, 0.12);
   --color-pill: rgba(255, 255, 255, 0.06);
@@ -79,6 +79,15 @@ body {
   box-shadow: var(--color-glass-shadow);
   backdrop-filter: saturate(180%) blur(28px);
   -webkit-backdrop-filter: saturate(180%) blur(28px);
+}
+
+.transfer-panel {
+  background: var(--color-transfer);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 40px rgba(26, 24, 72, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: saturate(160%) blur(20px);
+  -webkit-backdrop-filter: saturate(160%) blur(20px);
+  color: var(--color-transfer-fg);
 }
 
 .glass-pill {

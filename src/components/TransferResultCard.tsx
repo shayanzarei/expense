@@ -43,7 +43,7 @@ export function TransferResultCard() {
 
   return (
     <section className="mx-4 mt-6">
-      <div className="glass-panel overflow-hidden rounded-2xl bg-[var(--color-transfer)]">
+      <div className="transfer-panel overflow-hidden rounded-2xl">
         <div className="flex items-center justify-between px-4 py-3">
           <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-transfer-fg)]">
             Final transfer · ABN AMRO
